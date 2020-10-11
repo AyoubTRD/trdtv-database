@@ -1,0 +1,23 @@
+{
+    "name": "trdtv-database",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "nodemon index.js",
+        "start": "node index.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "dotenv": "^8.2.0",
+        "mongoose": "^5.10.9",
+        "puppeteer": "^5.3.1"
+    },
+    "devDependencies": {
+        "@types/puppeteer": "^3.0.2",
+        "nodemon": "^2.0.4"
+    }
+}
