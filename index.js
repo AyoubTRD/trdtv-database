@@ -128,6 +128,7 @@ async function getFullSerieData(series) {
 async function getSeasonData(fullSerieData) {
     const browser = await pupp.launch({
         headless: !DEV,
+        args: ["--no-sandbox"],
     });
     const page = await browser.newPage();
     for (let j = 0; j < fullSerieData.length; j++) {
@@ -157,6 +158,7 @@ async function getSeasonData(fullSerieData) {
 async function getEpisodeData(seasonData) {
     const browser = await pupp.launch({
         headless: !DEV,
+        args: ["--no-sandbox"],
     });
     let page = await browser.newPage();
     const done = JSON.parse(fs.readFileSync("fullData.json"));
