@@ -35,11 +35,11 @@ async function closeLastPage(browser) {
 
 async function getBasicSerieData() {
     const browser = await pupp.launch({
-        headless: false,
+        headless: !DEV,
     });
     const page = await browser.newPage();
     await page.goto("https://gose.egybest.bid/tv/", {
-        timeout: 60 * 1000,
+        timeout: 0,
     });
 
     await repeat(
@@ -128,7 +128,7 @@ async function getFullSerieData(series) {
 async function getSeasonData(fullSerieData) {
     const browser = await pupp.launch({
         headless: !DEV,
-        args: ["--no-sandbox"],
+        args: process.env.PROD ? ["--no-sandbox"] : [],
     });
     const page = await browser.newPage();
     for (let j = 0; j < fullSerieData.length; j++) {
@@ -155,14 +155,13 @@ async function getSeasonData(fullSerieData) {
     return fullSerieData;
 }
 
-async function getEpisodeData(seasonData) {
+async function getEpisodeData(seasonData, output) {
     const browser = await pupp.launch({
         headless: !DEV,
-        args: ["--no-sandbox"],
     });
     let page = await browser.newPage();
-    const done = JSON.parse(fs.readFileSync("fullData.json"));
-    for (let i = 0; i < seasonData.length; i++) {
+    const done = JSON.parse(fs.readFileSync(output));
+    for (let i = done.length; i < seasonData.length; i++) {
         const serie = seasonData[i];
         for (let j = 0; j < serie.seasons.length; j++) {
             const season = serie.seasons[j];
@@ -227,22 +226,29 @@ async function getEpisodeData(seasonData) {
                         quality.source = 1;
                         continue;
                     }
+                    let episodesDone = 0;
                     while (true) {
-                        const downloadBtn = await page.$(
-                            "body > div.mainbody > div > p:nth-child(4) > a:nth-child(1)"
-                        );
-                        const downloadURL = await page.$eval(
-                            "body > div.mainbody > div > p:nth-child(4) > a:nth-child(1)",
-                            (btn) => btn.getAttribute("href")
-                        );
-                        if (downloadURL) {
-                            quality.source = downloadURL;
-                            break;
-                        }
-                        await downloadBtn.click();
-                        await sleep(2000);
-                        closeLastPage(browser);
-                        await sleep(4000);
+                        try {
+                            const downloadBtn = await page.$(
+                                "body > div.mainbody > div > p:nth-child(4) > a:nth-child(1)"
+                            );
+                            const downloadURL = await page.$eval(
+                                "body > div.mainbody > div > p:nth-child(4) > a:nth-child(1)",
+                                (btn) => btn.getAttribute("href")
+                            );
+                            if (downloadURL) {
+                                quality.source = downloadURL;
+                                episodesDone++;
+                                console.log(
+                                    "       Episodes Done: " + episodesDone
+                                );
+                                break;
+                            }
+                            await downloadBtn.click();
+                            await sleep(4000);
+                            closeLastPage(browser);
+                            await sleep(5000);
+                        } catch {}
                     }
                 }
                 if (restart) {
@@ -256,16 +262,21 @@ async function getEpisodeData(seasonData) {
         }
         console.log("Series Done: " + (i + 1));
         done.push(serie);
-        fs.writeFileSync("fullData.json", JSON.stringify(done));
+        fs.writeFileSync(output, JSON.stringify(done));
     }
     return done;
 }
 
 async function main() {
     let seasonData = JSON.parse(fs.readFileSync("seasonData.json"));
-    seasonData = seasonData.slice(0);
-    const data = await getEpisodeData(seasonData);
-    fs.writeFileSync("fullData.json", JSON.stringify(data));
+    await getEpisodeData(seasonData.slice(0, 50), "data1.json");
+    // await getEpisodeData(seasonData.slice(50, 100), "data2.json");
 }
+
+// function start() {
+//     main().catch((e) => start());
+// }
+
+// start();
 
 main();
